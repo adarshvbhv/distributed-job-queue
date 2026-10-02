@@ -1,0 +1,14 @@
+# Environment variables & secrets
+.env
+*.env
+
+# Compiled binaries
+*.exe
+*.out
+bin/
+tmp/
+
+# IDE / OS settings
+.vscode/
+.idea/
+.DS_Store
