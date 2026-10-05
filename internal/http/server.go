@@ -7,21 +7,21 @@ import (
 	"net/http"
 
 	"github.com/adarshvbhv/distributed-job-queue/internal/config"
-	"github.com/adarshvbhv/distributed-job-queue/internal/storage"
+	"github.com/adarshvbhv/distributed-job-queue/internal/job"
 )
 
 type Server struct {
 	httpServer *http.Server
 	logger     *slog.Logger
 	config     *config.Config
-	db         *storage.Postgres
+	jobRepo    job.Repository
 }
 
 func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "OK")
 }
 
-func NewServer(logger *slog.Logger, config *config.Config, db *storage.Postgres) *Server {
+func NewServer(logger *slog.Logger, config *config.Config, jobRepo job.Repository) *Server {
 
 	mux := http.NewServeMux()
 
@@ -30,9 +30,9 @@ func NewServer(logger *slog.Logger, config *config.Config, db *storage.Postgres)
 			Addr:    ":" + config.HTTPPort,
 			Handler: mux,
 		},
-		logger: logger,
-		config: config,
-		db:     db,
+		logger:  logger,
+		config:  config,
+		jobRepo: jobRepo,
 	}
 
 	s.requestHandler(mux)
@@ -55,5 +55,7 @@ func (s *Server) Shutdown(ctx context.Context) error {
 func (s *Server) requestHandler(mux *http.ServeMux) {
 
 	mux.HandleFunc("GET /health", s.healthHandler)
+	mux.HandleFunc("POST /jobs", s.createJobHandler)
+	mux.HandleFunc("GET /jobs/{id}", s.getJobHandler)
 
 }

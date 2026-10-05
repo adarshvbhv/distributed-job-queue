@@ -11,6 +11,7 @@ import (
 
 	"github.com/adarshvbhv/distributed-job-queue/internal/config"
 	apphttp "github.com/adarshvbhv/distributed-job-queue/internal/http"
+	"github.com/adarshvbhv/distributed-job-queue/internal/job"
 	"github.com/adarshvbhv/distributed-job-queue/internal/storage"
 )
 
@@ -23,7 +24,7 @@ func main() {
 	defer cancel()
 
 	db1, err := storage.NewPostgres(ctx, logger, cfg.DatabaseURL)
-
+	
 	if err != nil || db1 == nil {
 		logger.Error("error creating new postgres", "error", err)
 		return
@@ -31,11 +32,14 @@ func main() {
 
 	defer db1.Pool.Close()
 
+	repo:= job.NewPostgresRepository(db1)
+
+
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(ch)
 
-	server := apphttp.NewServer(logger, &cfg, db1)
+	server := apphttp.NewServer(logger, &cfg, repo)
 
 	go func() {
 
