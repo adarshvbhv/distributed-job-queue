@@ -10,6 +10,7 @@ import (
 type Repository interface {
 	Create(ctx context.Context, job *Job) error
 	GetByID(ctx context.Context, id uuid.UUID) (*Job, error)
+	UpdateJobStatus(ctx context.Context, id uuid.UUID, status Status, errorMsg *string) error
 }
 
 var (

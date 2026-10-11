@@ -12,7 +12,7 @@ import (
 )
 
 // Helper to set up clean DB session and automatic table truncation
-func setupTestDB(t *testing.T) (*storage.Postgres, context.Context) {
+func SetupTestDB(t *testing.T) (*storage.Postgres, context.Context) {
 	t.Helper()
 
 	databaseURL := os.Getenv("DATABASE_URL")
@@ -43,9 +43,8 @@ func setupTestDB(t *testing.T) (*storage.Postgres, context.Context) {
 }
 
 func TestPostgresRepository_CreateAndGetByID(t *testing.T) {
-	db, ctx := setupTestDB(t)
+	db, ctx := SetupTestDB(t)
 	repo := NewPostgresRepository(db)
-
 
 	job := NewJob(
 		"test.job",
@@ -78,7 +77,7 @@ func TestPostgresRepository_CreateAndGetByID(t *testing.T) {
 }
 
 func TestPostgresRepository_Idempotency(t *testing.T) {
-	db, ctx := setupTestDB(t)
+	db, ctx := SetupTestDB(t)
 	repo := NewPostgresRepository(db)
 
 	key := "test-idempotency-key-2"
@@ -86,7 +85,7 @@ func TestPostgresRepository_Idempotency(t *testing.T) {
 	job1 := NewJob(
 		"test.job",
 		[]byte(`{"message":"first"}`),
-		&key, 
+		&key,
 		3,
 	)
 
@@ -113,7 +112,7 @@ func TestPostgresRepository_Idempotency(t *testing.T) {
 
 func TestPostgresRepository_GetByID_NotFound(t *testing.T) {
 	// initialize DB/repository as in your existing test
-	db, ctx := setupTestDB(t)
+	db, ctx := SetupTestDB(t)
 	repo := NewPostgresRepository(db)
 
 	id := uuid.New()

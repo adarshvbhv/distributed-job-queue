@@ -130,3 +130,17 @@ func (r *PostgresRepository) GetByID(
 
 	return &job, nil
 }
+
+
+func (r *PostgresRepository) UpdateJobStatus(ctx context.Context, id uuid.UUID, status Status, errorMsg *string) error{
+
+	query :=`
+	UPDATE jobs 
+	SET status = $2, error= $3 WHERE
+	ID=$1
+	`
+
+	_, err := r.db.Pool.Exec(ctx, query, id,status, *errorMsg)
+	return err
+
+}
