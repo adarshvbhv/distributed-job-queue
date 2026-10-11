@@ -3,6 +3,7 @@ package worker
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"github.com/adarshvbhv/distributed-job-queue/internal/job"
 	"github.com/adarshvbhv/distributed-job-queue/internal/queue"
@@ -31,7 +32,7 @@ func (w *WorkerPool) worker() {
 		j := w.queue.Dqueue()
 		ctx := context.Background()
 
-		if err := w.repo.UpdateJobStatus(ctx, j.ID, job.StatusRunning, nil); err != nil {
+		if err := w.repo.UpdateJobStatus(ctx, j.ID, job.StatusRunning, nil, time.Now()); err != nil {
 			w.logger.Error("failed to update job to running status", "job id", j.ID, "error", err)
 			continue
 		}
@@ -41,7 +42,7 @@ func (w *WorkerPool) worker() {
 		if !ok {
 			errMsg := "no handler found for this job"
 			w.logger.Error(errMsg, "job id", j.Type)
-			w.repo.UpdateJobStatus(ctx, j.ID, job.StatusFailed, &errMsg)
+			w.repo.UpdateJobStatus(ctx, j.ID, job.StatusFailed, &errMsg, time.Now())
 		}
 
 		err := handler.Execute(ctx, j.Payload)
@@ -49,12 +50,12 @@ func (w *WorkerPool) worker() {
 		if err != nil {
 			errMsg := err.Error()
 			w.logger.Error(errMsg, "job", j.ID, "error", err)
-			w.repo.UpdateJobStatus(ctx, j.ID, job.StatusFailed, &errMsg)
+			w.repo.UpdateJobStatus(ctx, j.ID, job.StatusFailed, &errMsg, time.Now())
 
 			continue
 		}
 
-		w.repo.UpdateJobStatus(ctx, j.ID, job.StatusCompleted, nil)
+		w.repo.UpdateJobStatus(ctx, j.ID, job.StatusCompleted, nil, time.Now())
 
 		w.logger.Info("job executed successfully", "job id", j.ID)
 	}

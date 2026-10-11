@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/adarshvbhv/distributed-job-queue/internal/storage"
 	"github.com/jackc/pgx/v5"
@@ -126,21 +127,29 @@ func (r *PostgresRepository) GetByID(
 		return nil, fmt.Errorf("get job: %w", err)
 	}
 
-	
-
 	return &job, nil
 }
 
+func (r *PostgresRepository) UpdateJobStatus(ctx context.Context, id uuid.UUID, status Status, errorMsg *string, timestamp time.Time) error {
+	timestampCol := "completed_at"
+	if status == StatusRunning {
+		timestampCol = "started_at"
+	}
+	query := fmt.Sprintf(`
+        UPDATE jobs 
+        SET status = $2, 
+            error = $3, 
+            %s = $4
+        WHERE id = $1
+    `, timestampCol)
 
-func (r *PostgresRepository) UpdateJobStatus(ctx context.Context, id uuid.UUID, status Status, errorMsg *string) error{
-
-	query :=`
-	UPDATE jobs 
-	SET status = $2, error= $3 WHERE
-	ID=$1
-	`
-
-	_, err := r.db.Pool.Exec(ctx, query, id,status, *errorMsg)
-	return err
+	_, err := r.db.Pool.Exec(ctx, query, id, status, errorMsg, timestamp)
+	if err!=nil{
+		if errors.Is(err, pgx.ErrNoRows){
+			return ErrJobNotFound
+		}
+		return fmt.Errorf("get job: %w", err)
+	}
+	return nil
 
 }
